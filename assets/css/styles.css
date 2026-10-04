@@ -130,10 +130,14 @@ ul,ol{list-style:none}
   stroke-linecap:round;stroke-linejoin:round;
 }
 
+/* el degradado se recorta al texto, pero la sombra va aparte con
+   drop-shadow: text-shadow no se recorta con background-clip y en
+   algunos repaint se ve la sombra gris suelta sobre el fondo claro */
 .grad{
   background:linear-gradient(100deg,var(--sky-200),var(--sky-400) 45%,#fff 70%,var(--sky-300));
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 3px 0 rgba(3,26,44,.42));
 }
 
 .panel{
@@ -419,11 +423,12 @@ ul,ol{list-style:none}
 .nav__burger[aria-expanded="true"] span:nth-child(2){opacity:0;scale:.4 1}
 .nav__burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 
-/* ---------- 9. Reveal ---------- */
+/* ---------- 9. Reveal ----------
+   corto y con poco desplazamiento: si tarda, el hueco se nota al bajar */
 .js .reveal{
-  opacity:0;transform:translateY(30px);
-  transition:opacity .85s var(--ease),transform .85s var(--ease);
-  transition-delay:calc(var(--d,0) * 95ms);
+  opacity:0;transform:translateY(14px);
+  transition:opacity .45s var(--ease),transform .45s var(--ease);
+  transition-delay:calc(var(--d,0) * 55ms);
 }
 .js .reveal.in{opacity:1;transform:none}
 
@@ -484,12 +489,13 @@ ul,ol{list-style:none}
   line-height:1.75;
   letter-spacing:.01em;
   max-width:20ch;
-  text-shadow:0 6px 0 rgba(3,26,44,.45);
+  /* sin text-shadow aqui: el titulo lleva drop-shadow en .grad */
 }
 .hero__title .grad{display:block}
 .hero__title span.grad:first-child{
   background:linear-gradient(100deg,#fff,#dff8ff 40%,var(--sky-300));
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 5px 0 rgba(3,26,44,.5));
 }
 
 .hero__lead{
@@ -564,7 +570,8 @@ ul,ol{list-style:none}
   font-family:var(--font-pixel);
   font-size:clamp(1.05rem,3.4vw,1.85rem);
   line-height:1.7;letter-spacing:.01em;
-  text-shadow:0 5px 0 rgba(3,26,44,.4);
+  /* titulo de seccion: pixel font, sombra solida detras de la letra */
+  filter:drop-shadow(0 4px 0 rgba(3,26,44,.4));
 }
 .sec-lead{margin-top:1.1rem;color:var(--text-dim);font-size:1.03rem}
 

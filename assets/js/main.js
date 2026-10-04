@@ -158,7 +158,9 @@
           io.unobserve(e.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      // rootMargin positivo = empieza a mostrarse ANTES de llegar al borde,
+      // para que no se vea el hueco al bajar. threshold 0 = en cuanto asoma.
+    }, { threshold: 0, rootMargin: '0px 0px 18% 0px' });
     items.forEach(function (el) { io.observe(el); });
   }
   // por si el preloader se salta (reduced motion) o algo falla antes
