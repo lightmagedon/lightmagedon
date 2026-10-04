@@ -1,0 +1,407 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04121e">
+
+<title>LightMagedon — Modpack para Minecraft 1.19.2</title>
+<meta name="description" content="LightMagedon es un modpack para Minecraft 1.19.2 con Forge: shaders, texturas 32x y unos cuantos mods para que vaya mas fluido.">
+<meta name="author" content="LightMagedon">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="LightMagedon — Modpack de Minecraft">
+<meta property="og:description" content="LightMagedon, modpack de Minecraft 1.19.2 con Forge. Shaders, texturas 32x y descarga directa.">
+<meta property="og:image" content="./assets/img/logo-outline.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/png" href="./assets/img/logo-mark.png">
+<link rel="apple-touch-icon" href="./assets/img/logo-mark.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./assets/css/styles.css">
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+<!-- ============ SPRITE DE ICONOS ============ -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/><path d="M10 4h1v2h-1zM10 8h1v2h-1zM10 12h1v2h-1z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.5a3.2 3.2 0 0 1 0 6M17 14.5a6 6 0 0 1 4 5.5"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+  <symbol id="i-discord" viewBox="0 0 24 24"><path d="M8.5 8.5A14 14 0 0 1 12 8c1.2 0 2.4.2 3.5.5M8.5 8.5 6.8 5.2A16 16 0 0 0 4 8.8C2.5 12.3 2 16 2 16s2.3 1.2 4.5 1.8M8.5 8.5c-1 1.6-1.5 4-1.5 7.5 0 0 1.5 1 4.5 1s4.5-1 4.5-1c0-3.5-.5-5.9-1.5-7.5M17 16c2.2-.6 5-1.8 5-1.8s-.5-3.7-2.8-7.6a16 16 0 0 0-2.8-3.6M9 19.5c1.9.6 3 1 3 1s1.1-.4 3-1"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-4.8-8-10a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.2-8 10-8 10z"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 4v15m0 0 6-6m-6 6-6-6"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 0 1 .5-9 6 6 0 0 1 11.4 1.6A3.7 3.7 0 0 1 18 18z"/></symbol>
+  <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2.8 21 7.4v9.2L12 21.2 3 16.6V7.4z"/><path d="M3 7.4 12 12l9-4.6M12 12v9.2"/></symbol>
+  <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 14 4-4"/><circle cx="12" cy="18" r="1.4"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.2 8-7.5 9.5C7.7 20 4.5 16.5 4.5 12V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 2.6 15 0 18M12 3c-2.6 2.6-2.6 15 0 18"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></symbol>
+</svg>
+
+<!-- ============ PROGRESO DE SCROLL ============ -->
+<div class="scroll-progress" aria-hidden="true"><span id="scrollBar"></span></div>
+
+<!-- ============ PRELOADER ============ -->
+<div class="preloader" id="preloader">
+  <div class="preloader__inner">
+    <img class="preloader__logo" src="./assets/img/logo-mark.png" alt="" width="96" height="96">
+    <p class="preloader__title">Cargando</p>
+    <div class="preloader__track"><span class="preloader__fill" id="preloaderFill"></span></div>
+    <p class="preloader__pct"><span id="preloaderPct">0</span>%</p>
+  </div>
+</div>
+
+<!-- ============ CIELO DECORATIVO ============ -->
+<div class="sky" aria-hidden="true">
+  <div class="sky__photo" data-parallax="0.18"><div class="sky__photo-inner"></div></div>
+  <div class="sky__clouds sky__clouds--far" data-parallax="0.07" data-drift="180">
+    <div class="sky__track"></div>
+  </div>
+  <div class="sky__clouds sky__clouds--near" data-parallax="0.13" data-drift="95">
+    <div class="sky__track"></div>
+  </div>
+  <div class="sky__beams"></div>
+  <canvas class="sky__motes" id="motes"></canvas>
+  <div class="sky__grain"></div>
+  <div class="sky__vignette"></div>
+</div>
+
+<a class="skip-link" href="#descargar">Saltar a la descarga</a>
+
+<!-- ============ NAVBAR ============ -->
+<header class="nav" id="nav">
+  <div class="nav__inner shell">
+    <a class="brand" href="#inicio" title="Ir al inicio">
+      <img class="brand__mark" src="./assets/img/logo-mark.png" alt="" width="40" height="40">
+      <span class="brand__text">
+        <span class="brand__name">LightMagedon</span>
+        <span class="brand__tag">Modpack 1.19.2</span>
+      </span>
+    </a>
+
+    <nav class="nav__links" id="navLinks" aria-label="Navegacion principal">
+      <a href="#descargar">Modpack</a>
+      <a href="#servidor">Servidor</a>
+      <a href="#mods">Mods</a>
+      <a href="#instalar">Instalar</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn--sm btn--primary nav__cta-mobile" href="#descargar">
+        <svg class="ico"><use href="#i-download"/></svg> Descargar
+      </a>
+    </nav>
+
+    <div class="nav__side">
+      <a class="btn btn--sm btn--primary nav__cta" href="#descargar" data-magnetic>
+        <svg class="ico"><use href="#i-download"/></svg>
+        <span>Descargar</span>
+      </a>
+      <button class="nav__burger" id="navBurger" aria-label="Abrir menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="inicio">
+  <div class="shell hero__inner">
+    <p class="pill reveal" data-delay="0">
+      <span class="pill__dot"></span>
+      LightMagedon v1.0.0 · Forge 1.19.2
+    </p>
+
+    <div class="hero__logo reveal" data-delay="1">
+      <div class="hero__logo-glow" aria-hidden="true"></div>
+      <img src="./assets/img/logo-outline.png" alt="Logo de LightMagedon" width="520" height="520" fetchpriority="high">
+    </div>
+
+    <h1 class="hero__title reveal" data-delay="2">
+      <span class="grad">LightMagedon</span>
+    </h1>
+
+    <p class="hero__lead reveal" data-delay="3">
+      Un modpack hecho para darle un aire más ligero y colorido al juego. Trae shaders, texturas 32x y algunas mejoras para que todo corra mejor. Solo descargas el .zip, lo descomprimes y juegas.
+    </p>
+
+    <div class="hero__cta reveal" data-delay="4">
+      <a class="btn btn--primary btn--lg" href="#descargar" data-magnetic>
+        <svg class="ico"><use href="#i-download"/></svg>
+        <span>Descargar modpack</span>
+      </a>
+      <a class="btn btn--ghost btn--lg" href="#servidor" data-magnetic>
+        <svg class="ico"><use href="#i-cube"/></svg>
+        <span>Entrar al servidor</span>
+      </a>
+    </div>
+
+  </div>
+
+  <a class="scroll-cue" href="#descargar" aria-label="Bajar a la sección de descarga">
+    <svg class="ico"><use href="#i-arrow-down"/></svg>
+  </a>
+</section>
+
+<!-- ============ DESCARGAS ============ -->
+<section class="section download" id="descargar">
+  <div class="shell">
+    <header class="sec-head">
+      <p class="eyebrow reveal"><span class="eyebrow__line"></span> Descargas</p>
+      <h2 class="sec-title reveal" data-delay="1">El <span class="grad">.zip</span></h2>
+      <p class="sec-lead reveal" data-delay="2">
+        Un único archivo con todo dentro. Pulsa el botón y se te guarda en el navegador.
+      </p>
+    </header>
+
+    <div class="dl reveal" data-delay="3">
+      <!-- tarjeta del archivo -->
+      <div class="dl__card panel">
+        <div class="dl__file">
+          <div class="dl__icon" aria-hidden="true"><svg class="ico"><use href="#i-zip"/></svg></div>
+          <div class="dl__meta">
+            <h3 class="dl__name" id="fileName">LightMagedon-Modpack-v1.0.0.zip</h3>
+            <ul class="chips">
+              <li class="chip chip--ok"><svg class="ico"><use href="#i-check"/></svg> Forge</li>
+              <li class="chip">MC 1.19.2</li>
+              <li class="chip" id="fileSize">— MB</li>
+              <li class="chip">20 mods</li>
+            </ul>
+          </div>
+          
+        </div>
+
+        
+
+        <!-- progreso -->
+        <div class="progress" id="progress" hidden>
+          <div class="progress__head">
+            <span class="progress__label" id="progressLabel">Descargando</span>
+            <span class="progress__pct" id="progressPct">0%</span>
+          </div>
+          <div class="progress__track"><span class="progress__fill" id="progressFill"></span></div>
+          <div class="progress__stats">
+            <span id="progressSize">0 MB / 0 MB</span>
+            <span id="progressSpeed">—</span>
+            <span id="progressEta">—</span>
+          </div>
+        </div>
+
+        <div class="dl__actions">
+          <button class="btn btn--primary btn--lg dl__btn" id="downloadBtn" data-magnetic>
+            <svg class="ico"><use href="#i-download"/></svg>
+            <span id="downloadBtnText">Descargar ahora</span>
+          </button>
+          <button class="btn btn--ghost" id="copyLinkBtn" data-magnetic>
+            <svg class="ico"><use href="#i-copy"/></svg>
+            <span>Copiar enlace</span>
+          </button>
+        </div>
+
+        <details class="dl__files">
+          <summary>
+            <svg class="ico"><use href="#i-chevron"/></svg>
+            <span>Qué incluye el archivo</span>
+          </summary>
+          <ul>
+            <li><code>mods/</code><span>Los jars del pack</span></li>
+            <li><code>config/</code><span>Opciones ya ajustadas</span></li>
+            <li><code>defaultconfigs/</code><span>2 configs por mundo</span></li>
+            <li><code>resourcepacks/</code><span>Texturas 32x</span></li>
+            <li><code>shaderpacks/</code><span>Complementary ReBorn</span></li>
+            <li><code>instalar/</code><span>Guía rápida</span></li>
+            <li><code>servidor/</code><span>server.properties</span></li>
+          </ul>
+        </details>
+      </div>
+
+      <!-- panel lateral -->
+      <aside class="dl__side">
+        <div class="panel panel--pad mini">
+          <p class="mini__title">Requisitos</p>
+          <ul class="mini__list">
+            <li><span>Minecraft</span><b>Java 1.19.2</b></li>
+            <li><span>Loader</span><b>Forge 1.19.2</b></li>
+            <li><span>Java</span><b>17</b></li>
+            <li><span>RAM</span><b>8 GB</b></li>
+            <li><span>Disco</span><b>2 GB libres</b></li>
+          </ul>
+        </div>
+
+        </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVIDOR ============ -->
+<section class="section server" id="servidor">
+  <div class="shell">
+    <header class="sec-head">
+      <p class="eyebrow reveal"><span class="eyebrow__line"></span> Servidor</p>
+      <h2 class="sec-title reveal" data-delay="1">El <span class="grad">servidor</span></h2>
+      <p class="sec-lead reveal" data-delay="2">
+        El mismo pack, pero en multijugador. Copia la IP, metela en el launcher y entra.
+      </p>
+    </header>
+
+    <div class="ip reveal" data-delay="3">
+      <div class="ip__box">
+        <span class="ip__label">IP del servidor</span>
+        <button class="ip__value" id="copyIp" data-magnetic>
+          <span id="ipText">play.lightmagedon.net</span>
+          <svg class="ico"><use href="#i-copy"/></svg>
+        </button>
+        <div class="ip__meta">
+          <span>Minecraft Java 1.19.2</span>
+          <span class="dot">·</span>
+          <span>Forge</span>
+          <span class="dot">·</span>
+          <span>Puerto <b>25565</b></span>
+        </div>
+      </div></div>
+</section>
+
+<!-- ============ MODS ============ -->
+<section class="section mods" id="mods">
+  <div class="shell">
+    <header class="sec-head">
+      <p class="eyebrow reveal"><span class="eyebrow__line"></span> Contenido</p>
+      <h2 class="sec-title reveal" data-delay="1">Los <span class="grad">mods</span> que incluye</h2>
+      <p class="sec-lead reveal" data-delay="2">
+        Los que más se notan. El resto van dentro del .zip.
+      </p>
+    </header>
+
+    <div class="mods__tools reveal" data-delay="3">
+      <label class="search">
+        <svg class="ico"><use href="#i-search"/></svg>
+        <span class="sr-only">Buscar un mod</span>
+        <input type="search" id="modSearch" placeholder="Buscar un mod" autocomplete="off">
+      </label>
+      <div class="filters" id="modFilters" role="group" aria-label="Filtrar por categoría">
+        <button class="filter is-active" data-cat="all">Todos</button>
+        <button class="filter" data-cat="Rendimiento">Rendimiento</button>
+        <button class="filter" data-cat="Shaders">Shaders</button>
+        <button class="filter" data-cat="Interfaz">Interfaz</button>
+        <button class="filter" data-cat="Calidad de vida">Calidad de vida</button>
+        <button class="filter" data-cat="Iluminación">Iluminación</button>
+        <button class="filter" data-cat="Magia y exploración">Magia</button>
+        <button class="filter" data-cat="Tecnologia">Tecnología</button>
+        <button class="filter" data-cat="Recursos">Recursos</button>
+      </div>
+    </div>
+
+    <div class="mods__grid" id="modGrid"></div>
+    <p class="mods__empty" id="modsEmpty" hidden>Sin resultados. Prueba con otro nombre.</p>
+  </div>
+</section>
+
+<!-- ============ INSTALAR ============ -->
+<section class="section steps" id="instalar">
+  <div class="shell">
+    <header class="sec-head">
+      <p class="eyebrow reveal"><span class="eyebrow__line"></span> Instalación</p>
+      <h2 class="sec-title reveal" data-delay="1">Instalarlo</h2>
+    </header>
+
+    <ol class="steps__list">
+      <li class="step reveal" data-delay="1">
+        <span class="step__n">1</span>
+        <div class="step__body">
+          <h3>Descarga el .zip</h3>
+          <p>Pulsa el botón de más arriba y descomprime el .zip cuando termine.</p>
+        </div>
+      </li>
+      <li class="step reveal" data-delay="2">
+        <span class="step__n">2</span>
+        <div class="step__body">
+          <h3>Copia las carpetas</h3>
+          <p>Descomprime y pega <code>mods/</code>, <code>config/</code> y <code>shaderpacks/</code> dentro de tu carpeta <code>.minecraft</code>.</p>
+        </div>
+      </li>
+      <li class="step reveal" data-delay="3">
+        <span class="step__n">3</span>
+        <div class="step__body">
+          <h3>A jugar</h3>
+          <p>Elige <b>Forge 1.19.2</b> en el launcher y ya está dentro.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section faq" id="faq">
+  <div class="shell shell--narrow">
+    <header class="sec-head">
+      <p class="eyebrow reveal"><span class="eyebrow__line"></span> Ayuda</p>
+      <h2 class="sec-title reveal" data-delay="1">Preguntas <span class="grad">frecuentes</span></h2>
+    </header>
+
+    <div class="accordion" id="accordion">
+      <details class="acc reveal" data-delay="2">
+        <summary><span>¿Funciona con shaders?</span><svg class="ico"><use href="#i-chevron"/></svg></summary>
+        <div class="acc__body"><p>Sí. El modpack está pensado para usarlos desde el launcher con Forge.</p></div>
+      </details>
+      <details class="acc reveal" data-delay="3">
+        <summary><span>¿Cuánta RAM necesito?</span><svg class="ico"><use href="#i-chevron"/></svg></summary>
+        <div class="acc__body"><p>Con 4 o 6 GB vas bien. Si usas shaders pesados, mejor 8.</p></div>
+      </details>
+      <details class="acc reveal" data-delay="4">
+        <summary><span>¿Cada cuánto se actualiza?</span><svg class="ico"><use href="#i-chevron"/></svg></summary>
+        <div class="acc__body"><p>Cada vez que haya algo que arreglar o añadir sube una nueva y la pongo aquí.</p></div>
+      </details>
+      <details class="acc reveal" data-delay="5">
+        <summary><span>¿Puedo usar el pack en mi servidor?</span><svg class="ico"><use href="#i-chevron"/></svg></summary>
+        <div class="acc__body"><p>Sí. La carpeta <code>servidor/</code> trae un <code>server.properties</code> base y un <code>lanzamiento.bat</code> para arrancar el servidor con Forge.</p></div>
+      </details>
+      <details class="acc reveal" data-delay="6">
+        <summary><span>¿El .zip es seguro?</span><svg class="ico"><use href="#i-chevron"/></svg></summary>
+        <div class="acc__body"><p>Solo lleva dentro los mods del pack y un par de archivos de texto. Puedes abrirlo antes de instalar, no hay nada que se ejecute solo.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="shell footer__inner">
+    <div class="footer__brand">
+      <img src="./assets/img/logo-mark.png" alt="" width="48" height="48">
+      <div>
+        <p class="footer__name">LightMagedon</p>
+        <p class="footer__copy">Minecraft 1.19.2 · Forge</p>
+      </div>
+    </div>
+
+    <nav class="footer__links" aria-label="Enlaces del pie">
+      <a href="#descargar">Modpack</a>
+      <a href="#servidor">Servidor</a>
+      <a href="#mods">Mods</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </div>
+
+  <div class="shell footer__bottom">
+    <p>© <span id="year">2026</span> LightMagedon. No es oficial de Mojang ni de Microsoft.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="./assets/js/main.js"></script>
+</body>
+</html>
