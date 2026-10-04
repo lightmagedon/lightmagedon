@@ -75,6 +75,119 @@
   function raf(fn) { return window.requestAnimationFrame(fn); }
 
   /* ------------------------------------------------------------------
+     0b. Sonidos
+     Web Audio API: los .wav se decodifican una vez y se reutilizan, asi
+     no hay latencia ni peticiones repetidas. Silencio por defecto si el
+     visitante lo apaga (se recuerda en localStorage).
+     ------------------------------------------------------------------ */
+  var SFX = (function () {
+    var FILES = {
+      click: './assets/audio/click.wav',
+      hover: './assets/audio/hover.wav',
+      pop: './assets/audio/pop.wav',
+      toggle: './assets/audio/toggle.wav',
+      copy: './assets/audio/copy.wav',
+      error: './assets/audio/error.wav',
+      download: './assets/audio/download.wav',
+      done: './assets/audio/done.wav'
+    };
+    var VOL = { click: 0.34, hover: 0.13, pop: 0.26, toggle: 0.24, copy: 0.3, error: 0.3, download: 0.28, done: 0.32 };
+    var KEY = 'lm-sound';
+    var ctx = null, master = null, buffers = {}, loading = null, last = {};
+
+    var on = true;
+    try {
+      var guardado = localStorage.getItem(KEY);
+      on = guardado === null ? true : guardado === 'on';
+    } catch (e) { on = true; }
+
+    function ensure() {
+      if (ctx) return ctx;
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 1;
+      master.connect(ctx.destination);
+      return ctx;
+    }
+
+    function load() {
+      if (loading) return loading;
+      var c = ensure();
+      if (!c) return Promise.resolve();
+      loading = Promise.all(Object.keys(FILES).map(function (k) {
+        return fetch(FILES[k]).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.arrayBuffer();
+        }).then(function (ab) {
+          return new Promise(function (res) {
+            var old = c.decodeAudioData(ab, res, function () { res(null); });
+            if (old && old.then) old.then(res, function () { res(null); });
+          });
+        }).then(function (buf) { if (buf) buffers[k] = buf; })
+          .catch(function () { /* si falta un archivo, el resto sigue */ });
+      }));
+      return loading;
+    }
+
+    // el navegador exige un gesto del usuario antes de reproducir
+    function unlock() {
+      var c = ensure();
+      if (c && c.state === 'suspended') c.resume();
+      load();
+    }
+
+    return {
+      get enabled() { return on; },
+
+      toggle: function () {
+        on = !on;
+        try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (e) {}
+        if (on) { unlock(); this.play('pop'); }
+        return on;
+      },
+
+      unlock: unlock,
+
+      play: function (name) {
+        if (!on) return;
+        var c = ensure();
+        if (!c) return;
+        if (c.state === 'suspended') c.resume();
+        if (!buffers[name]) { load(); return; }
+        // no repetir el mismo sonido cada pocos milisegundos
+        var t = c.currentTime;
+        if (last[name] && t - last[name] < 0.045) return;
+        last[name] = t;
+
+        var src = c.createBufferSource();
+        var gain = c.createGain();
+        src.buffer = buffers[name];
+        gain.gain.value = VOL[name] == null ? 0.25 : VOL[name];
+        src.connect(gain);
+        gain.connect(master);
+        src.start();
+      }
+    };
+  })();
+
+  // el primer clic/tecla de la pagina es lo que autoriza el audio
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+    window.addEventListener(ev, function once() {
+      SFX.unlock();
+      ['pointerdown', 'keydown', 'touchstart'].forEach(function (e2) {
+        window.removeEventListener(e2, once);
+      });
+    }, { once: true, passive: true });
+  });
+
+  // si el visitante lo tiene apagado en el sistema, no insistimos
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) on = false;
+  } catch (e) {}
+
+  /* ------------------------------------------------------------------
      1. Toast
      ------------------------------------------------------------------ */
   var toastEl = $('#toast');
@@ -379,9 +492,47 @@
         if (rafId) cancelAnimationFrame(rafId);
         rafId = raf(function () { move(e); });
       });
-      el.addEventListener('mouseenter', move);
+      el.addEventListener('mouseenter', function (e) { move(e); SFX.play('hover'); });
       el.addEventListener('mouseleave', reset);
+      el.addEventListener('click', function () { SFX.play('click'); });
     });
+  })();
+
+  /* ------------------------------------------------------------------
+     8b. Sonido en el resto de elementos interactivos
+     ------------------------------------------------------------------ */
+  (function sfxBits() {
+    // enlaces del menu y del footer
+    $$('.nav__links a, .footer__links a, .scroll-cue').forEach(function (a) {
+      a.addEventListener('mouseenter', function () { SFX.play('hover'); });
+      a.addEventListener('click', function () { SFX.play('click'); });
+    });
+
+    // menu movil
+    var burger = $('#navBurger');
+    if (burger) {
+      burger.addEventListener('click', function () { SFX.play('click'); });
+    }
+
+    // buscador
+    var search = $('#modSearch');
+    if (search) {
+      search.addEventListener('focus', function () { SFX.play('pop'); });
+      search.addEventListener('input', function () { SFX.play('pop'); });
+    }
+
+    // el boton de sonido
+    var sndBtn = $('#soundBtn');
+    if (sndBtn) {
+      var paint = function () {
+        sndBtn.setAttribute('aria-pressed', String(SFX.enabled));
+        sndBtn.setAttribute('aria-label', SFX.enabled ? 'Quitar sonido' : 'Activar sonido');
+        sndBtn.title = SFX.enabled ? 'Sonido: activado' : 'Sonido: desactivado';
+        sndBtn.classList.toggle('is-off', !SFX.enabled);
+      };
+      paint();
+      sndBtn.addEventListener('click', function () { SFX.toggle(); paint(); });
+    }
   })();
 
   /* ------------------------------------------------------------------
@@ -419,10 +570,11 @@
       ipBtn.addEventListener('click', function () {
         var txt = $('#ipText').textContent.trim();
         copy(txt).then(function () {
+          SFX.play('copy');
           ipBtn.classList.add('is-copied');
           toast('IP copiada: ' + txt);
           setTimeout(function () { ipBtn.classList.remove('is-copied'); }, 2000);
-        }).catch(function () { toast('No se pudo copiar', 'err'); });
+        }).catch(function () { SFX.play('error'); toast('No se pudo copiar', 'err'); });
       });
     }
 
@@ -431,8 +583,9 @@
       linkBtn.addEventListener('click', function () {
         var url = new URL(CONFIG.file, location.href).href;
         copy(url).then(function () {
+          SFX.play('copy');
           toast('Enlace copiado al portapapeles');
-        }).catch(function () { toast('No se pudo copiar', 'err'); });
+        }).catch(function () { SFX.play('error'); toast('No se pudo copiar', 'err'); });
       });
     }
   })();
@@ -500,7 +653,8 @@
     if (filters) {
       filters.addEventListener('click', function (e) {
         var b = e.target.closest('.filter');
-        if (!b) return;
+        if (!b || b.classList.contains('is-active')) return;
+        SFX.play('pop');
         $$('.filter', filters).forEach(function (x) { x.classList.remove('is-active'); });
         b.classList.add('is-active');
         cat = b.dataset.cat;
@@ -519,6 +673,7 @@
     if (!acc) return;
     $$('details', acc).forEach(function (d) {
       d.addEventListener('toggle', function () {
+        SFX.play('toggle');
         if (!d.open) return;
         $$('details', acc).forEach(function (o) { if (o !== d) o.open = false; });
       });
@@ -619,6 +774,7 @@
         if (etaEl) etaEl.textContent = 'completo';
       }
       toast('Descarga iniciada');
+      SFX.play('done');
       reset('Descargar de nuevo');
     }
 
@@ -691,6 +847,7 @@
                 if (speedEl) speedEl.textContent = '—';
                 if (etaEl) etaEl.textContent = 'completo';
                 saveBlob(blob, CONFIG.fileName);
+                SFX.play('done');
                 toast('Descargado: ' + CONFIG.fileName);
                 reset('Descargar de nuevo');
                 return;
@@ -721,11 +878,13 @@
           if (err && err.name === 'AbortError') {
             reset('Cancelado');
             if (label) label.textContent = 'Descarga cancelada';
+            SFX.play('error');
             toast('Descarga cancelada');
             return;
           }
           // red / CORS / servidor: usa el enlace directo como red de seguridad
           console.warn('[lightmagedon] descarga por stream fallida, usando enlace directo:', err);
+          SFX.play('error');
           reset();
           directDownload();
         });
@@ -736,6 +895,7 @@
         if (controller) controller.abort();
         return;
       }
+      SFX.play('download');
       if (CONFIG.streaming) streamDownload();
       else directDownload();
     });
