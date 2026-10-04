@@ -1,0 +1,372 @@
+/* ==========================================================================
+   LIGHTMAGEDON — intro cinematica
+   Todo el decorado es CSS: ni una imagen, ni texturas de Mojang.
+   Solo formas y colores propios.
+
+   ── COMO AJUSTARLA ──────────────────────────────────────────────────────
+   1. Duraciones ....... --in-t1 / --in-t2 / --in-t3   (abajo)
+   2. Colores .......... --in-sky-*, --in-grass-*, --in-dirt-*, --in-leaf-*
+   3. Cantidad de nubes  .intro__clouds--far / --near  -> nth-child en sus
+                         background-image, o cambia --in-cloud-count en el
+                         JS (intro.js lee esas dos variables).
+   4. Velocidad ........ cambia --in-t2 y los recorridos --in-d-*
+   5. Desplazamiento de la camara = --in-d-ground (suelo) y --in-d-tree
+   ========================================================================== */
+
+.intro{
+  /* ---- DURACIONES DE CADA FASE ---- */
+  --in-t1:1500ms;      /* escena 1: camara quieta a ras de suelo   */
+  --in-t2:2500ms;      /* escena 2: subida rapida                   */
+  --in-t3:1000ms;      /* escena 3: fundido hacia la pagina        */
+
+  /* ---- RECORRIDO DE CADA CAPA (parallax) ---- */
+  --in-d-ground:78vh;      /* el suelo es lo mas cercano: cae antes   */
+  --in-d-tree:96vh;        /* los arboles Starts mas abajo: tardan    */
+  --in-d-cloudN:150vh;
+  --in-d-cloudF:250vh;
+  --in-d-sun:330vh;        /* el sol esta lejos: casi no se mueve    */
+  --in-speed-tile:260px;   /* tile del rayado de viento (para loop)  */
+  --in-d-speed:780px;      /* 3 tiles exactos: el bucle no se nota   */
+
+  /* ---- CANTIDADES (las lee intro.js del CSS) ---- */
+  --in-cloud-far:9;        /* nubes pequenas/lejanas  */
+  --in-cloud-near:6;       /* nubes grandes/cercanas */
+  --in-tree-count:7;       /* arboles cuadrados      */
+
+  /* ---- COLORES: CIELO POR ETAPA ---- */
+  /* el etapa 3 termina en --sky-050/#f2fdff para que case con el
+     cielo real de la pagina (.sky / fondo.jpg) sin salto visible */
+  --in-sky-1-top:#2f9fe0;  --in-sky-1-bot:#8ce8ff;
+  --in-sky-2-top:#0f7fc4;  --in-sky-2-bot:#cdf2ff;
+  --in-sky-3-top:#7fd8ff;  --in-sky-3-bot:#f2fdff;
+
+  /* ---- COLORES: BLOQUES ---- */
+  --in-grass-a:#63b23f;  --in-grass-b:#4f9433;  --in-grass-c:#3d7a29;
+  --in-dirt-a:#8a5a34;   --in-dirt-b:#74492a;   --in-dirt-c:#5d3a20;
+  --in-trunk:#6b4a2b;    --in-trunk-b:#573a21;
+  --in-leaf-a:#46963a;   --in-leaf-b:#33762c;
+  --in-sun:#fff3b8;
+
+  --in-ease-rise:cubic-bezier(.85,0,.15,1);   /* acelera y luego frena */
+  --in-ease-out:cubic-bezier(.22,.61,.36,1);
+
+  position:fixed;inset:0;z-index:1000;
+  overflow:hidden;
+  display:none;                 /* se activa con .is-on */
+  background:#8ce8ff;
+  contain:strict;               /* aísla el repintado del resto */
+  touch-action:none;
+}
+.intro.is-on{display:block}
+
+/* ---------- capas de cielo (se cruzan con opacity: barato en GPU) ---------- */
+.intro__sky{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,var(--in-sky-1-top),var(--in-sky-1-bot));
+}
+.intro__sky--2{
+  opacity:0;
+  background:linear-gradient(180deg,var(--in-sky-2-top),var(--in-sky-2-bot));
+}
+.intro__sky--3{
+  opacity:0;
+  background:linear-gradient(180deg,var(--in-sky-3-top),var(--in-sky-3-bot));
+}
+
+/* ---------- sol cuadrado ---------- */
+.intro__sun{
+  position:absolute;left:15%;top:11%;
+  width:min(11vh,8.5vw);aspect-ratio:1;
+  background:var(--in-sun);
+  box-shadow:
+    0 0 0 min(1.1vh,.8vw) rgba(255,243,184,.35),
+    0 0 min(9vh,7vw) rgba(255,243,184,.55),
+    0 0 min(18vh,14vw) rgba(255,243,184,.28);
+  will-change:transform,opacity;
+}
+
+/* ---------- capas de nubes ----------
+   Cada nube es un <span> con varios cuadrados via box-shadow, que es lo
+   mas barato que hay: un solo nodo por nube, sin imagenes. */
+.intro__clouds{
+  position:absolute;left:-8%;right:-8%;top:-170vh;height:460vh;
+  will-change:transform;
+  pointer-events:none;
+}
+.intro__clouds--far{opacity:.55}
+.intro__clouds--near{opacity:.95}
+
+.intro__puff{
+  position:absolute;
+  width:var(--pw,60px);height:var(--ph,26px);
+  background:#fff;
+  /* los bloques extra los agrega intro.js con box-shadow inline:
+     un nodo por nube en vez de una malla de divs */
+}
+/* el borde inferior difuminado es lo que le da el rollo de nube cuadrada */
+.intro__puff::after{
+  content:'';position:absolute;left:0;right:0;bottom:-2px;height:3px;
+  background:linear-gradient(180deg,rgba(196,234,255,.95),rgba(196,234,255,0));
+}
+
+/* ---------- suelo: franja de pasto + tierra, en bloques ---------- */
+.intro__ground{
+  position:absolute;left:0;right:0;bottom:0;height:46%;
+  will-change:transform;
+}
+.intro__grass{
+  position:absolute;left:0;right:0;top:0;height:26%;
+  background:
+    linear-gradient(180deg,var(--in-grass-a) 0 42%,var(--in-grass-b) 42% 74%,var(--in-grass-c) 74% 100%),
+    /* vetas verticales: hacen de "columnas" de bloque */
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,.07) 0 12px,rgba(255,255,255,.05) 12px 26px,rgba(0,0,0,.05) 26px 38px);
+  box-shadow:0 3px 0 rgba(0,0,0,.16) inset;
+}
+.intro__dirt{
+  position:absolute;left:0;right:0;top:26%;bottom:0;
+  background:
+    linear-gradient(180deg,var(--in-dirt-a) 0 30%,var(--in-dirt-b) 30% 68%,var(--in-dirt-c) 68% 100%),
+    /* motas de bloque: dos rejillas desfasadas dan textura sin imagen */
+    repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 18px,rgba(255,255,255,.04) 18px 36px),
+    repeating-linear-gradient(180deg,rgba(0,0,0,.1) 0 22px,transparent 22px 44px);
+  background-blend-mode:multiply,normal,normal;
+}
+
+/* ---------- arboles cuadrados ---------- */
+.intro__trees{
+  position:absolute;inset:0;
+  will-change:transform;
+  pointer-events:none;
+}
+.intro__tree{position:absolute;bottom:46%;width:var(--tw,52px)}
+.intro__tree i{display:block;position:relative}          /* tronco */
+.intro__tree .trunk{
+  width:38%;height:var(--th,120px);margin-inline:auto;
+  background:
+    linear-gradient(90deg,var(--in-trunk) 0 62%,var(--in-trunk-b) 62% 100%);
+}
+.intro__tree .leaves{                               /* copa */
+  width:100%;aspect-ratio:1;margin-bottom:-18%;
+  background:
+    linear-gradient(180deg,var(--in-leaf-a) 0 52%,var(--in-leaf-b) 52% 100%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.1) 0 10px,rgba(255,255,255,.06) 10px 20px);
+  background-blend-mode:multiply,normal;
+  box-shadow:0 0 0 2px rgba(24,58,28,.28);
+}
+
+/* ---------- rayado de viento (velocidad) ---------- */
+.intro__speed{
+  position:absolute;left:0;right:0;top:-60%;height:220%;
+  opacity:0;
+  background-image:
+    /* trazos verticales */
+    repeating-linear-gradient(90deg,
+      transparent 0 42px,rgba(255,255,255,.5) 42px 45px,transparent 45px 104px),
+    /* guiones cortos que bajan: esto es lo que da la sensacion de aire */
+    repeating-linear-gradient(180deg,
+      rgba(255,255,255,.75) 0 70px,transparent 70px 260px);
+  background-size:100% var(--in-speed-tile);
+  -webkit-mask-image:radial-gradient(115% 75% at 50% 45%,#000 26%,transparent 76%);
+  mask-image:radial-gradient(115% 75% at 50% 45%,#000 26%,transparent 76%);
+  mix-blend-mode:screen;
+  will-change:transform,opacity;
+  pointer-events:none;
+}
+
+/* ---------- destello final: tapa el empalme con el cielo real ---------- */
+.intro__flash{
+  position:absolute;inset:0;opacity:0;
+  background:radial-gradient(120% 90% at 50% 42%,#f2fdff,var(--in-sky-3-bot));
+  will-change:opacity;
+}
+
+/* ---------- boton "Saltar intro" ---------- */
+.intro__skip{
+  position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:5;
+  padding:.62rem .78rem;
+  font-family:var(--font-pixel);font-size:.5rem;line-height:1.7;letter-spacing:.02em;
+  color:#eaf7ff;
+  background:rgba(4,18,30,.5);
+  border:1px solid rgba(255,255,255,.4);
+  border-radius:var(--r-sm);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .25s,color .25s,transform .25s;
+}
+.intro__skip:hover{background:rgba(4,18,30,.8);color:#fff;transform:translateY(-2px)}
+.intro__skip:active{transform:translateY(1px)}
+
+/* ==========================================================================
+   TIMELINE — solo arranca con .is-on (clase que pone el JS)
+   Cada capa lleva su propio retardo/velocidad: eso ES el parallax.
+   ========================================================================== */
+
+/* -- escena 2: subida. El suelo se va hacia abajo -- */
+.intro.is-on .intro__ground{animation:inGround var(--in-t2) var(--in-ease-rise) var(--in-t1) both}
+@keyframes inGround{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(0,var(--in-d-ground),0)}
+}
+/* los arboles caen un poco mas: estan mas cerca de la camara */
+.intro.is-on .intro__trees{animation:inTrees var(--in-t2) var(--in-ease-rise) var(--in-t1) both}
+@keyframes inTrees{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(0,var(--in-d-tree),0)}
+}
+.intro.is-on .intro__clouds--near{animation:inCloudN var(--in-t2) var(--in-ease-rise) var(--in-t1) both}
+@keyframes inCloudN{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(0,var(--in-d-cloudN),0)}
+}
+.intro.is-on .intro__clouds--far{animation:inCloudF var(--in-t2) linear var(--in-t1) both}
+@keyframes inCloudF{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(0,var(--in-d-cloudF),0)}
+}
+.intro.is-on .intro__sun{animation:inSun var(--in-t2) linear var(--in-t1) both}
+@keyframes inSun{
+  from{transform:translate3d(0,0,0);opacity:1}
+  to  {transform:translate3d(0,var(--in-d-sun),0);opacity:.25}
+}
+
+/* el cielo cambia de color en dos tramos */
+.intro.is-on .intro__sky--2{animation:inSky2 var(--in-t2) var(--in-ease-rise) var(--in-t1) both}
+@keyframes inSky2{from{opacity:0}to{opacity:1}}
+.intro.is-on .intro__sky--3{animation:inSky3 var(--in-t3) linear calc(var(--in-t1) + var(--in-t2)) both}
+@keyframes inSky3{from{opacity:0}to{opacity:1}}
+
+/* el viento entra suave, se mantiene y se va con el ease-out */
+.intro.is-on .intro__speed{animation:inSpeed var(--in-t2) linear var(--in-t1) both}
+@keyframes inSpeed{
+  0%   {transform:translate3d(0,0,0);opacity:0}
+  24%  {opacity:.5}
+  72%  {opacity:.6}
+  100% {transform:translate3d(0,var(--in-d-speed),0);opacity:0}
+}
+
+/* -- escena 3: zoom suave + destello para fundir con la pagina -- */
+.intro.is-on.is-out{animation:inOut var(--in-t3) var(--in-ease-out) both}
+@keyframes inOut{
+  from{opacity:1;transform:scale(1)}
+  to  {opacity:0;transform:scale(1.09)}
+}
+.intro.is-on.is-out .intro__flash{animation:inFlash var(--in-t3) linear both}
+@keyframes inFlash{
+  0%  {opacity:0}
+  70% {opacity:.72}
+  100%{opacity:1}
+}
+.intro.is-on.is-out .intro__skip{animation:inSkipOut var(--in-t3) linear both}
+@keyframes inSkipOut{from{opacity:1}to{opacity:0}}
+
+/* variante de "saltar": sin fundido, corte directo al estado final */
+.intro.is-skipped .intro__flash{opacity:1}
+.intro.is-skipped{opacity:0;transition:opacity .18s linear}
+
+/* ==========================================================================
+   BOTON "ENTRAR" — aparece en el preloader al 100%
+   Estilo pixel: Press Start 2P, borde duro, sombra gruesa, sin radio.
+   ========================================================================== */
+.preloader__enter{
+  display:none;
+  margin-top:.2rem;
+  padding:1.05rem 1.5rem;
+  font-family:var(--font-pixel);
+  font-size:clamp(.68rem,2.7vw,.84rem);
+  line-height:1;
+  color:var(--ink-950);
+  background:linear-gradient(180deg,var(--sky-200),var(--sky-400) 58%,var(--sky-500));
+  border:2px solid #04121e;
+  border-radius:0;
+  box-shadow:
+    0 5px 0 0 #04121e,
+    0 6px 0 2px var(--sky-700),
+    0 18px 40px -14px rgba(32,192,255,.95);
+  animation:enterPulse 1.7s var(--ease-out) infinite;
+  transition:transform .16s var(--ease),box-shadow .16s var(--ease);
+}
+.preloader.can-enter .preloader__enter{display:inline-block}
+.preloader__enter:hover{
+  background:linear-gradient(180deg,#eafcff,var(--sky-300) 58%,var(--sky-400));
+  box-shadow:
+    0 7px 0 0 #04121e,
+    0 8px 0 2px var(--sky-700),
+    0 22px 48px -14px rgba(64,212,255,1);
+}
+.preloader__enter:active{
+  transform:translateY(4px);
+  box-shadow:0 1px 0 0 #04121e,0 2px 0 2px var(--sky-700);
+  animation:none;
+}
+@keyframes enterPulse{
+  0%,100%{filter:brightness(1)}
+  50%    {filter:brightness(1.22)}
+}
+/* el preloader se apaga tambien el logo y la barra cuando ya se puede entrar */
+.preloader.can-enter .preloader__logo{animation:enterFloat 2.4s ease-in-out infinite}
+@keyframes enterFloat{
+  0%,100%{transform:translateY(0)}
+  50%    {transform:translateY(-9px)}
+}
+.preloader.can-enter .preloader__track{opacity:.45}
+.preloader.can-enter .preloader__title{color:var(--sky-100)}
+
+/* ==========================================================================
+   BLOQUEO DE LA PAGINA
+   Se arranca con "intro-locked" desde el <head>, asi el sitio nunca se ve
+   antes de tiempo. Se quita al terminar (y se deja "intro-done", que es lo
+   que habilita las animaciones de entrada).
+   ========================================================================== */
+html.intro-locked,html.intro-locked body{overflow:hidden;height:100%}
+html.intro-locked .nav,
+html.intro-locked .skip-link,
+html.intro-locked .scroll-progress,
+html.intro-locked main,
+html.intro-locked .footer,
+html.intro-locked .toast{visibility:hidden}
+
+/* el hero y la navbar solo animan su entrada con "intro-done" */
+html:not(.intro-done) .nav{opacity:0;transform:translateY(-100%)}
+html:not(.intro-done) .hero .reveal{
+  opacity:0 !important;          /* !important: el setTimeout de seguridad
+                                    de main.js no puede delatar el hero */
+  transform:none;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width:620px){
+  .intro{
+    --in-t1:1300ms;
+    --in-t2:2200ms;
+    --in-t3:900ms;
+    --in-d-ground:74vh;
+    --in-d-tree:92vh;
+    --in-d-cloudN:140vh;
+    --in-d-cloudF:232vh;
+    --in-speed-tile:200px;
+    --in-d-speed:600px;           /* 3 tiles exactos */
+  }
+  .intro__sun{left:9%;width:min(13vh,15vw)}
+  .intro__skip{font-size:.44rem;padding:.55rem .6rem;top:max(10px,env(safe-area-inset-top))}
+}
+/* pantallas muy anchas y bajas (portatiles): acortar el alto de las capas */
+@media (min-aspect-ratio:2/1){
+  .intro{--in-d-ground:70vh;--in-d-tree:86vh;--in-d-cloudN:130vh;--in-d-cloudF:210vh}
+}
+
+/* ==========================================================================
+   PREFERENCIAS DEL SISTEMA
+   El JS ya salta la intro entera, pero por si acaso nada se mueve.
+   ========================================================================== */
+@media (prefers-reduced-motion:reduce){
+  .intro{display:none !important}
+  .preloader__enter{animation:none}
+}
+@media (prefers-contrast:more){
+  .intro__skip{border-color:#fff;background:rgba(0,0,0,.85)}
+}
+@media print{
+  .intro{display:none !important}
+}

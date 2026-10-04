@@ -181,7 +181,13 @@
       },
 
       unlock: unlock,
-      play: play
+      play: play,
+
+      // Puente para intro.js: el ruido de viento se genera al vuelo y usa el
+      // MISMO AudioContext, en vez de abrir un segundo contexto (que el
+      // navegador dejaria en suspended por separado).
+      context: function () { return ensure(); },
+      bus: function () { ensure(); return master; }
     };
   })();
 
@@ -221,7 +227,11 @@
     // No guardamos "esta sonando" en una variable: se lee del elemento, que
     // siempre es la verdad y no se puede desincronizar. "gen" sirve para que
     // un fundido antiguo no pueda tocar el volumen si ya se pidio otra cosa.
-    var timer = null, gen = 0, quiere = false;
+    var timer = null, gen = 0, quiere = false, duckF = 1;
+
+    // volumen de destino real: el normal, o el rebajado si hay algo sonando
+    // encima (lo usa el viento de la intro)
+    function destino() { return target * duckF; }
 
     el.volume = 0;
     if (M.file) el.src = M.file;
@@ -248,10 +258,10 @@
       if (p && p.then) {
         p.then(function () {
           if (myGen !== gen) return;      // mientras tanto el visitante lo apagó
-          fadeTo(target, ms, myGen);
+          fadeTo(destino(), ms, myGen);
         })['catch'](function () { });     // sin permiso: se reintenta al siguiente clic
       } else {
-        fadeTo(target, ms, myGen);
+        fadeTo(destino(), ms, myGen);
       }
     }
 
@@ -286,7 +296,17 @@
 
       // cambio de pestaña: no gastar CPU en segundo plano
       pause: function () { if (!el.paused || el.volume > 0.001) bajarYParar(fadeOut); },
-      resume: function () { if (quiere) arrancar(1200); }
+      resume: function () { if (quiere) arrancar(1200); },
+
+      // ducking: baja la musica un rato mientras suena otra cosa encima
+      // (el viento de la intro). on=true baja, on=false restaura.
+      duck: function (on) {
+        duckF = on ? (M.duckFactor || 0.3) : 1;
+        // si la musica aun no arranco, no hay nada que mover: destino()
+        // ya tiene el factor guardado para cuando arranque
+        if (el.volume <= 0.001 && el.paused) return;
+        fadeTo(destino(), on ? 260 : 900, ++gen);
+      }
     };
   })();
 
@@ -305,6 +325,23 @@
     if (document.hidden) MUSIC.pause();
     else MUSIC.resume();
   });
+
+  /* ------------------------------------------------------------------
+     0d. Puente para intro.js
+     La intro necesita tres cosas que aqui son privadas: retener el final
+     del preloader hasta que el visitante pulse "Entrar", relanzar el
+     reveal cuando termina, y tocar la musica (duck). Se expone aqui para
+     no duplicar logica. Ver assets/js/intro.js.
+     ------------------------------------------------------------------ */
+  window.LM = {
+    CONFIG: CONFIG,
+    SFX: SFX,
+    MUSIC: MUSIC,
+    startReveal: startReveal,
+    // intro.js lo sustituye por una funcion si quiere retener el preloader.
+    // Mientras sea null, el preloader se comporta igual que siempre.
+    holdPreloader: null
+  };
   /* ------------------------------------------------------------------
      1. Toast
      ------------------------------------------------------------------ */
@@ -350,6 +387,11 @@
     }
 
     function finish() {
+      // la intro puede retener la salida hasta que pulse "Entrar" (ver intro.js)
+      if (window.LM && window.LM.holdPreloader) {
+        window.LM.holdPreloader(finish);
+        return;
+      }
       box.classList.add('is-done');
       document.body.style.overflow = '';
       setTimeout(function () { box.remove(); }, 900);

@@ -23,7 +23,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="./assets/css/styles.css">
-<script>document.documentElement.classList.add('js');</script>
+<link rel="stylesheet" href="./assets/css/intro.css">
+<script>
+  /* "intro-locked" se pone aqui, antes de pintar nada: hasta que la intro
+     termine, el sitio entero esta oculto. intro.js lo quita al terminar
+     (o si no toca intro) y deja "intro-done", que es lo que habilita las
+     animaciones de entrada del hero y la navbar. */
+  document.documentElement.classList.add('js','intro-locked');
+</script>
 </head>
 <body>
 
@@ -61,7 +68,28 @@
     <p class="preloader__title">Cargando</p>
     <div class="preloader__track"><span class="preloader__fill" id="preloaderFill"></span></div>
     <p class="preloader__pct"><span id="preloaderPct">0</span>%</p>
+    <!-- Boton "Entrar": aparece al 100%. El clic es necesario porque el
+         navegador no deja sonar nada hasta que el visitante interactua. -->
+    <button class="preloader__enter" id="introEnter" type="button">Entrar</button>
   </div>
+</div>
+
+<!-- ============ INTRO CINEMATICA ============
+     Capa fija por encima de todo. El decorado (suelo, arboles, nubes,
+     viento) lo dibuja CSS; intro.js genera los nodos y maneja el tiempo.
+     Se muestra solo la primera vez de la sesion. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__sky"></div>
+  <div class="intro__sky intro__sky--2"></div>
+  <div class="intro__sky intro__sky--3"></div>
+  <div class="intro__sun"></div>
+  <div class="intro__clouds intro__clouds--far" id="introCloudsFar"></div>
+  <div class="intro__clouds intro__clouds--near" id="introCloudsNear"></div>
+  <div class="intro__ground"><div class="intro__grass"></div><div class="intro__dirt"></div></div>
+  <div class="intro__trees" id="introTrees"></div>
+  <div class="intro__speed"></div>
+  <div class="intro__flash"></div>
+  <button class="intro__skip" id="introSkip" type="button">Saltar intro</button>
 </div>
 
 <!-- ============ CIELO DECORATIVO ============ -->
@@ -412,5 +440,7 @@
 <audio id="bgm" src="./assets/audio/background.mp3" loop preload="none" playsinline></audio>
 
 <script src="./assets/js/main.js"></script>
+<!-- intro.js va DESPUES de main.js: usa el puente window.LM que este publica -->
+<script src="./assets/js/intro.js"></script>
 </body>
 </html>
