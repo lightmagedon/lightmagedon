@@ -22,6 +22,15 @@
     // Bajalo si tu pack es pequeno y prefieres siempre la barra de progreso.
     streamLimitMB: 80,
 
+    // Musica de fondo. No arranca sola: los navegadores bloquean el audio
+    // hasta que el visitante interactua, y el volumen va bajito a proposito.
+    music: {
+      file: './assets/audio/background.mp3',
+      volume: 0.11,      // 0.11 = muy bajito. Sube a 0.2 si quieres mas.
+      fadeInMs: 3000,    // entra despacio, no pega el golpe de golpe
+      fadeOutMs: 800
+    },
+
     // Mods mostrados en la seccion "Mods".
     mods: [
       { n: 'Sodium',              c: 'Rendimiento',        d: 'Reescribe el renderizador. +200 FPS en zonas densas.' },
@@ -138,48 +147,54 @@
       load();
     }
 
+    // suelta un efecto. Los buffers ya estan decodificados, asi que va instantaneo.
+    function play(name) {
+      if (!on) return;
+      var c = ensure();
+      if (!c) return;
+      if (c.state === 'suspended') c.resume();
+      if (!buffers[name]) { load(); return; }   // aun no estaba: se pierde este
+      // no repetir el mismo sonido cada pocos milisegundos
+      var t = c.currentTime;
+      if (last[name] && t - last[name] < 0.045) return;
+      last[name] = t;
+
+      var src = c.createBufferSource();
+      var gain = c.createGain();
+      src.buffer = buffers[name];
+      gain.gain.value = VOL[name] == null ? 0.25 : VOL[name];
+      src.connect(gain);
+      gain.connect(master);
+      src.start();
+    }
+
     return {
       get enabled() { return on; },
 
+      // Sin "this" a proposito: el toggle se guarda en una variable para
+      // poder envolverlo, y ahi "this" seria undefined.
       toggle: function () {
         on = !on;
         try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (e) {}
-        if (on) { unlock(); this.play('pop'); }
+        if (on) { unlock(); play('pop'); }
         return on;
       },
 
       unlock: unlock,
-
-      play: function (name) {
-        if (!on) return;
-        var c = ensure();
-        if (!c) return;
-        if (c.state === 'suspended') c.resume();
-        if (!buffers[name]) { load(); return; }
-        // no repetir el mismo sonido cada pocos milisegundos
-        var t = c.currentTime;
-        if (last[name] && t - last[name] < 0.045) return;
-        last[name] = t;
-
-        var src = c.createBufferSource();
-        var gain = c.createGain();
-        src.buffer = buffers[name];
-        gain.gain.value = VOL[name] == null ? 0.25 : VOL[name];
-        src.connect(gain);
-        gain.connect(master);
-        src.start();
-      }
+      play: play
     };
   })();
 
-  // el primer clic/tecla de la pagina es lo que autoriza el audio
+  // El navegador no deja reproducir audio hasta que el visitante interactua.
+  // La escucha se queda puesta (no es "una vez"): si el play() es rechazado
+  // se reintenta en el siguiente clic. Cuando ya esta autorizado, ambas
+  // funciones salen enseguida y no cuesta nada.
   ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
-    window.addEventListener(ev, function once() {
+    window.addEventListener(ev, function () {
       SFX.unlock();
-      ['pointerdown', 'keydown', 'touchstart'].forEach(function (e2) {
-        window.removeEventListener(e2, once);
-      });
-    }, { once: true, passive: true });
+      if (SFX.enabled) MUSIC.want();
+      MUSIC.unlock();
+    }, { passive: true });
   });
 
   // si el visitante lo tiene apagado en el sistema, no insistimos
@@ -187,6 +202,109 @@
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) on = false;
   } catch (e) {}
 
+  /* ------------------------------------------------------------------
+     0c. Musica de fondo
+     Un <audio> en bucle con el volumen subido/bajado en pasos. Se pausa
+     al cambiar de pestaña para no gastar CPU ni reproducir en segundo
+     plano, y arranca con un fundido largo para que no sustente.
+     ------------------------------------------------------------------ */
+  var MUSIC = (function () {
+    var el = document.getElementById('bgm');
+    var noop = { want: function () {}, unlock: function () {}, stop: function () {}, pause: function () {}, resume: function () {} };
+    if (!el) return noop;
+
+    var M = CONFIG.music || {};
+    var target = typeof M.volume === 'number' ? M.volume : 0.11;
+    var fadeIn = M.fadeInMs || 3000;
+    var fadeOut = M.fadeOutMs || 800;
+
+    // No guardamos "esta sonando" en una variable: se lee del elemento, que
+    // siempre es la verdad y no se puede desincronizar. "gen" sirve para que
+    // un fundido antiguo no pueda tocar el volumen si ya se pidio otra cosa.
+    var timer = null, gen = 0, quiere = false;
+
+    el.volume = 0;
+    if (M.file) el.src = M.file;
+    el.loop = true;
+
+    // curva suave (smoothstep): el volumen no da saltos
+    function fadeTo(dest, ms, myGen) {
+      if (timer) { clearInterval(timer); timer = null; }
+      var desde = el.volume;
+      if (ms <= 0) { el.volume = dest; return; }
+      var t0 = performance.now();
+      timer = setInterval(function () {
+        if (myGen !== gen) { timer = null; return; }          // hay otro paso en marcha
+        var p = (performance.now() - t0) / ms;
+        if (p >= 1) { el.volume = dest; timer = null; return; }
+        el.volume = desde + (dest - desde) * (p * p * (3 - 2 * p));
+      }, 40);
+    }
+
+    function arrancar(ms) {
+      var myGen = ++gen;
+      var p;
+      try { p = el.play(); } catch (e) { return; }
+      if (p && p.then) {
+        p.then(function () {
+          if (myGen !== gen) return;      // mientras tanto el visitante lo apagó
+          fadeTo(target, ms, myGen);
+        })['catch'](function () { });     // sin permiso: se reintenta al siguiente clic
+      } else {
+        fadeTo(target, ms, myGen);
+      }
+    }
+
+    // baja a cero y solo entonces detiene el elemento
+    function bajarYParar(ms) {
+      var myGen = ++gen;
+      if (el.volume <= 0.001) {
+        if (!el.paused) { try { el.pause(); } catch (e) {} }
+        return;
+      }
+      fadeTo(0, ms, myGen);
+      setTimeout(function () {
+        if (myGen !== gen) return;                           // alguien arranco/paro despues
+        if (el.volume <= 0.001 && !el.paused) { try { el.pause(); } catch (e) {} }
+      }, ms + 160);
+    }
+
+    return {
+      // el visitante quiere musica (boton de sonido encendido)
+      want: function (v) { quiere = v !== false; },
+
+      // el navegador solo deja reproducir tras un gesto real.
+      // Si ya suena, no hace nada; si se quedo a medias, lo retoma.
+      unlock: function () {
+        if (!quiere) return;
+        if (!el.paused && el.volume > 0.001) return;
+        arrancar(fadeIn);
+      },
+
+      // silenciado desde el boton: fundido a cero y parar del todo
+      stop: function () { bajarYParar(fadeOut); },
+
+      // cambio de pestaña: no gastar CPU en segundo plano
+      pause: function () { if (!el.paused || el.volume > 0.001) bajarYParar(fadeOut); },
+      resume: function () { if (quiere) arrancar(1200); }
+    };
+  })();
+
+  // el boton de sonido manda sobre los efectos y sobre la musica
+  var _sfxToggle = SFX.toggle;
+  SFX.toggle = function () {
+    var r = _sfxToggle();
+    if (r) { MUSIC.want(true); MUSIC.unlock(); }
+    else { MUSIC.want(false); MUSIC.stop(); }
+    return r;
+  };
+
+  // al cambiar de pestaña: pausa y reanuda con fundido
+  document.addEventListener('visibilitychange', function () {
+    if (!SFX.enabled) return;
+    if (document.hidden) MUSIC.pause();
+    else MUSIC.resume();
+  });
   /* ------------------------------------------------------------------
      1. Toast
      ------------------------------------------------------------------ */
