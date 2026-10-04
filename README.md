@@ -17,7 +17,9 @@ lightmagedon/
 ├─ .nojekyll                      # evita que Jekyll procese el repo
 ├─ assets/
 │  ├─ css/styles.css              # estilos, animaciones, responsive
+│  ├─ css/intro.css               # decorado y tiempos de la intro
 │  ├─ js/main.js                  # CONFIG + toda la lógica
+│  ├─ js/intro.js                 # la intro: línea de tiempo y viento
 │  └─ img/
 │     ├─ fondo.jpg                # fondo del cielo
 │     ├─ logo-outline.png         # logo con contorno (el que se ve en el hero)
@@ -131,6 +133,7 @@ GPU y no provoca layout.
 
 | Dónde | Qué hace |
 |---|---|
+| Intro | Suelo → subida entre las nubes → fundido con el cielo de la página |
 | Fondo | Parallax suave según el scroll + efecto Ken Burns muy lento |
 | Nubes | Dos capas con desplazamiento infinito a velocidades distintas |
 | Rayos de sol | Cono de gradiente rotando muy lentamente |
@@ -141,6 +144,32 @@ GPU y no provoca layout.
 | Descarga | Barra con progreso, velocidad y tiempo restante reales |
 
 Todo se desactiva solo con **`prefers-reduced-motion`** activado en el sistema.
+
+### La intro
+
+Al entrar aparece el preloader y, al llegar al 100 %, un botón **Entrar**. El clic
+no es decorativo: los navegadores no dejan sonar audio hasta que el visitante
+interactúa, así que ese clic es el que autoriza la música y el viento. Después
+la cámara sube entre las nubes y la intro se funde con el cielo real del sitio.
+
+Se muestra **una sola vez por sesión** (`sessionStorage`), se puede saltar con el
+botón de arriba a la derecha o con `Esc`, y si el sistema pide menos movimiento
+no aparece.
+
+**Para ajustarla, todo está en las variables `--in-*` de `assets/css/intro.css`:**
+
+| Variable | Qué hace |
+|---|---|
+| `--in-t1` / `--in-t2` / `--in-t3` | Duración de las tres fases: quieta, subida, fundido |
+| `--in-d-*` | Cuánto se mueve cada capa (suelo, árboles, nubes) = intensidad del parallax |
+| `--in-speed-tile` / `--in-d-speed` | El rayado de viento. **Mantené `--in-d-speed` en múltiplos exactos del tile** (3 × tile), si no el bucle se nota |
+| `--in-sky-*` | Colores del cielo en cada etapa. El último tiene que parecerse al cielo del sitio para que el empalme no se vea |
+| `--in-grass-*` / `--in-dirt-*` / `--in-leaf-*` | Colores de los bloques |
+| `--in-cloud-far` / `--in-cloud-near` / `--in-tree-count` | Cuántas nubes y árboles hay |
+
+`intro.js` lee esos valores del CSS, así que alcanza con cambiarlos ahí. El
+decorado es solo CSS: no usa imágenes ni texturas de Mojang. El viento es ruido
+blanco generado en el momento con Web Audio, no un archivo.
 
 ---
 
